@@ -2,7 +2,6 @@ import React from 'react';
 
 export default function CarrierCheckboxes({ carriers, seleccionados, onToggle, onBuscar, cargando }) {
   if (!carriers.length) return null;
-
   return (
     <div className="card">
       <h2>3. Seleccionar carriers a procesar</h2>
