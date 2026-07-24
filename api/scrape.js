@@ -16,6 +16,7 @@ async function scrapeUPS(page, waybill) {
       'Excepción', 'Exception',
       'Etiqueta creada', 'Label Created'
     ];
+    //CUANDO EL ESTADO SE ACTULIZA
     const estadoEncontrado = estadosConocidos.find((e) => texto.includes(e));
     const matchFecha = texto.match(
       /(?:Entregado|Delivered)[^0-9]{0,20}(\d{1,2}\/\d{1,2}\/\d{2,4})/i
