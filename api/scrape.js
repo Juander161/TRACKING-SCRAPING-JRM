@@ -1,40 +1,33 @@
-import chromium from '@sparticuz/chromium-min';
+import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 async function scrapeUPS(page, waybill) {
-    // Usamos el enlace de UPS México (es_MX)
-    const url = `https://www.ups.com/track?loc=es_MX&tracknum=${waybill}&requester=ST/`;
+  const url = `https://www.ups.com/track?loc=es_MX&tracknum=${waybill}&requester=ST/`;
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+  await page.waitForSelector('body', { timeout: 15000 });
+  
+  const datos = await page.evaluate(() => {
+    const texto = document.body.innerText;
+    const estadosConocidos = [
+      'Entregado', 'Delivered',
+      'En camino', 'Out for Delivery',
+      'En tránsito', 'In Transit',
+      'Excepción', 'Exception',
+      'Etiqueta creada', 'Label Created'
+    ];
+    const estadoEncontrado = estadosConocidos.find((e) => texto.includes(e));
+    const matchFecha = texto.match(
+      /(?:Entregado|Delivered)[^0-9]{0,20}(\d{1,2}\/\d{1,2}\/\d{2,4})/i
+    );
     
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-    await page.waitForSelector('body', { timeout: 15000 });
-    
-    const datos = await page.evaluate(() => {
-      const texto = document.body.innerText;
-      
-      // Lista de estados en español (y respaldo en inglés)
-      const estadosConocidos = [
-        'Entregado', 'Delivered',
-        'En camino', 'Out for Delivery',
-        'En tránsito', 'In Transit',
-        'Excepción', 'Exception',
-        'Etiqueta creada', 'Label Created'
-      ];
-      
-      const estadoEncontrado = estadosConocidos.find((e) => texto.includes(e));
-      
-      // Buscamos la fecha que está cerca de la palabra "Entregado" o "Delivered"
-      const matchFecha = texto.match(
-        /(?:Entregado|Delivered)[^0-9]{0,20}(\d{1,2}\/\d{1,2}\/\d{2,4})/i
-      );
-      
-      return {
-        status: estadoEncontrado || 'Desconocido',
-        deliveryDate: matchFecha ? matchFecha[1] : null,
-      };
-    });
-    
-    return datos;
-  }
+    return {
+      status: estadoEncontrado || 'Desconocido',
+      deliveryDate: matchFecha ? matchFecha[1] : null,
+    };
+  });
+  
+  return datos;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -49,13 +42,10 @@ export default async function handler(req, res) {
   
   let browser;
   try {
-    // Aquí descargamos el Chromium intacto en tiempo de ejecución
-    const packUrl = 'https://github.com/Sparticuz/chromium/releases/download/v131.0.0/chromium-v131.0.0-pack.tar';
-    
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(packUrl),
+      executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     });
     
