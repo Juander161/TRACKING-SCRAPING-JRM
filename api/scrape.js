@@ -41,12 +41,38 @@ export default async function handler(req, res) {
   
   let browser;
   try {
-    // AQUÍ ES LA MAGIA: Nos conectamos al Chrome remoto de Browserless
-    // REEMPLAZA TU_API_KEY CON LA LLAVE QUE COPIASTE
-    // AQUÍ ES LA MAGIA: Nos conectamos al Chrome remoto de Browserless
+    // 1. Traducimos tu CURL a una petición Fetch de JavaScript para Surfsky
+    const surfskyResponse = await fetch('https://api-us1.surfsky.io/profiles/one_time', {
+      method: 'POST',
+      headers: {
+        'X-Cloud-Api-Token': 'TU_API_TOKEN_AQUI', // <-- PON TU TOKEN REAL AQUÍ
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!surfskyResponse.ok) {
+      const errorText = await surfskyResponse.text();
+      throw new Error(`Error de Surfsky API: ${surfskyResponse.status} - ${errorText}`);
+    }
+
+    // 2. Extraemos la respuesta que nos da Surfsky
+    const surfskyData = await surfskyResponse.json();
+    
+    // Imprimimos la respuesta en Vercel por si necesitamos ajustar el nombre de la variable
+    console.log("Respuesta de Surfsky:", surfskyData);
+
+    // Generalmente, estas APIs devuelven la URL en una propiedad llamada websocket, wsUrl, o endpoint.
+    // Ajustaremos esto si Surfsky usa un nombre diferente en su documentación.
+    const wsEndpoint = surfskyData.websocket || surfskyData.wsUrl || surfskyData.endpoint || surfskyData.url;
+
+    if (!wsEndpoint) {
+      throw new Error("No se encontró la URL del WebSocket en la respuesta de Surfsky: " + JSON.stringify(surfskyData));
+    }
+
+    // 3. Nos conectamos usando la URL que nos dio Surfsky
     browser = await puppeteer.connect({
-        browserWSEndpoint: 'wss://production-sfo.browserless.io/?token=4433f7d2cbf84a1399464fc6362b3bad',
-      });
+      browserWSEndpoint: wsEndpoint,
+    });
     
     const page = await browser.newPage();
     const resultados = [];
@@ -75,7 +101,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ resultados });
   } catch (error) {
     if (browser) await browser.close();
-    console.error("Error crítico de conexión remota:", error.message);
+    console.error("Error crítico de conexión con Surfsky:", error.message);
     return res.status(500).json({ error: error.message });
   }
 }
