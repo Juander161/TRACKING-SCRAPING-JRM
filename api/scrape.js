@@ -1,4 +1,3 @@
-import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 async function scrapeUPS(page, waybill) {
@@ -42,11 +41,10 @@ export default async function handler(req, res) {
   
   let browser;
   try {
-    browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+    // AQUÍ ES LA MAGIA: Nos conectamos al Chrome remoto de Browserless
+    // REEMPLAZA TU_API_KEY CON LA LLAVE QUE COPIASTE
+    browser = await puppeteer.connect({
+      browserWSEndpoint: 'wss://chrome.browserless.io?token=4433f7d2cbf84a1399464fc6362b3bad',
     });
     
     const page = await browser.newPage();
@@ -76,7 +74,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ resultados });
   } catch (error) {
     if (browser) await browser.close();
-    console.error("Error crítico al iniciar Puppeteer:", error.message, error);
+    console.error("Error crítico de conexión remota:", error.message);
     return res.status(500).json({ error: error.message });
   }
 }

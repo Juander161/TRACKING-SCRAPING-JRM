@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@sparticuz/chromium": "^131.0.0",
     "exceljs": "^4.4.0",
     "puppeteer-core": "^23.0.0",
     "react": "^19.2.7",
