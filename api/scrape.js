@@ -79,6 +79,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ resultados });
   } catch (error) {
     if (browser) await browser.close();
+    // ESTA LÍNEA ES NUEVA: Imprimirá el error real en los logs de Vercel
+    console.error("Error crítico al iniciar Puppeteer:", error.message, error);
+    
     return res.status(500).json({ error: error.message });
   }
 }
