@@ -1,5 +1,8 @@
 const TAMANO_LOTE = 15;
 
+// Función de pausa
+const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function scrapeLote(items) {
   const respuesta = await fetch('/api/scrape', {
     method: 'POST',
@@ -30,7 +33,7 @@ export async function scrapeBatch(items, onProgress) {
         resultados.push({
           waybill: item.waybill,
           carrier: item.carrier,
-          status: 'Error al consultar',
+          status: `Error: ${error.message}`,
           deliveryDate: null,
         });
       });
@@ -39,6 +42,13 @@ export async function scrapeBatch(items, onProgress) {
     
     if (onProgress) {
       onProgress(resultados.length, items.length);
+    }
+
+    // PAUSA DE 15 SEGUNDOS (15000 ms)
+    // Matemáticamente seguro para el límite de 5 llamadas / min de Surfsky
+    if (i + TAMANO_LOTE < items.length) {
+      console.log("Esperando 15 segundos para respetar los límites de Surfsky...");
+      await esperar(15000); 
     }
   }
   
