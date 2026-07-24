@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { exportarReporteExcel } from '../utils/exportExcel.js';
+import React, { useMemo, useState, useRef } from 'react';
+import { crearArchivoNuevo, actualizarArchivoExistente } from '../utils/exportExcelStyled.js';
 
 const COLOR_PROCESADO = '#2e7d32';
 const COLOR_NO_PROCESADO = '#c62828';
@@ -11,7 +11,6 @@ function construirResumenPorCarrier(resultados) {
     if (!grupos[r.carrier]) grupos[r.carrier] = [];
     grupos[r.carrier].push(r);
   });
-
   return Object.entries(grupos)
     .map(([carrier, items]) => {
       const total = items.length;
@@ -26,10 +25,11 @@ function construirResumenPorCarrier(resultados) {
     .sort((a, b) => b.total - a.total);
 }
 
-export default function ResultsReport({ resultados }) {
+export default function ResultsReport({ resultados, scanLocation }) {
   const [pagina, setPagina] = useState(0);
   const [busquedaWaybill, setBusquedaWaybill] = useState('');
   const [filtroCarrier, setFiltroCarrier] = useState('');
+  const fileInputRef = useRef(null); // Referencia para el input oculto de archivos
 
   const resumenPorCarrier = useMemo(() => construirResumenPorCarrier(resultados), [resultados]);
   const carriersDisponibles = useMemo(
@@ -55,18 +55,58 @@ export default function ResultsReport({ resultados }) {
     return (valor) => { setter(valor); setPagina(0); };
   }
 
+  // Función para el botón 1: Crear archivo nuevo
+  async function handleCrearNuevo() {
+    try {
+      await crearArchivoNuevo(scanLocation, resultados);
+    } catch (error) {
+      console.error("Error al crear archivo nuevo:", error);
+      alert("Hubo un error al generar el archivo Excel.");
+    }
+  }
+
+  // Función para el botón 2: Actualizar archivo existente
+  async function handleActualizarExistente(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await actualizarArchivoExistente(file, scanLocation, resultados);
+    } catch (error) {
+      console.error("Error al actualizar archivo:", error);
+      alert("Hubo un error al actualizar el archivo. Verifica que sea un Excel válido.");
+    }
+    // Limpiar el input para permitir seleccionar el mismo archivo si hay un error
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
   if (!resultados.length) return null;
 
   return (
     <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <h2>4. Estado general de los envíos</h2>
-        <button className="primary" onClick={() => exportarReporteExcel(resultados)}>
-          Descargar reporte Excel
-        </button>
+        
+        {/* Nuevos botones de exportación */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="primary" onClick={handleCrearNuevo}>
+            Crear archivo nuevo
+          </button>
+          <button className="primary" onClick={() => fileInputRef.current?.click()}>
+            Actualizar archivo existente
+          </button>
+          {/* Input oculto para cargar el Excel a actualizar */}
+          <input
+            type="file"
+            accept=".xlsx"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleActualizarExistente}
+          />
+        </div>
       </div>
+      
       <p>{resultados.length} trackings procesados en total</p>
-
+      
       <h3>Resumen por Carrier</h3>
       <table>
         <thead>
@@ -86,7 +126,7 @@ export default function ResultsReport({ resultados }) {
           ))}
         </tbody>
       </table>
-
+      
       <h3>Detalle de trackings</h3>
       <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
         <input
@@ -102,7 +142,7 @@ export default function ResultsReport({ resultados }) {
           {carriersDisponibles.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
-
+      
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
         <button className="primary" onClick={() => setPagina((p) => Math.max(0, p - 1))} disabled={paginaActual === 0}>
           Anterior
@@ -112,7 +152,7 @@ export default function ResultsReport({ resultados }) {
           Siguiente
         </button>
       </div>
-
+      
       <table>
         <thead>
           <tr><th>Waybill</th><th>Carrier</th><th>Estado</th><th>Fecha de entrega</th><th>Procesado</th></tr>

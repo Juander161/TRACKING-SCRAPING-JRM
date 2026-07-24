@@ -1,122 +1,97 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState } from 'react';
+import FileUpload from './components/FileUpload.jsx';
+import ScanLocationSelect from './components/ScanLocationSelect.jsx';
+import CarrierCheckboxes from './components/CarrierCheckboxes.jsx';
+import ResultsReport from './components/ResultsReport.jsx';
+import {
+  parseTrackingFile,
+  extraerScanLocations,
+  extraerCarriersPorLocation,
+} from './utils/parseFile.js';
+import { scrapeBatch } from './scrapers/realScraper.js';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [fileName, setFileName] = useState('');
+  const [registros, setRegistros] = useState([]);
+  const [scanLocations, setScanLocations] = useState([]);
+  const [scanLocationSeleccionado, setScanLocationSeleccionado] = useState('');
+  const [carriersDisponibles, setCarriersDisponibles] = useState([]);
+  const [carriersSeleccionados, setCarriersSeleccionados] = useState([]);
+  const [cargando, setCargando] = useState(false);
+  const [progreso, setProgreso] = useState(null);
+  const [resultados, setResultados] = useState([]);
+
+  async function handleFileSelected(file) {
+    setFileName(file.name);
+    setResultados([]);
+    const datos = await parseTrackingFile(file);
+    setRegistros(datos);
+    const locations = extraerScanLocations(datos);
+    setScanLocations(locations);
+    setScanLocationSeleccionado('');
+    setCarriersDisponibles([]);
+    setCarriersSeleccionados([]);
+  }
+
+  function handleScanLocationChange(valor) {
+    setScanLocationSeleccionado(valor);
+    const carriers = extraerCarriersPorLocation(registros, valor);
+    setCarriersDisponibles(carriers);
+    setCarriersSeleccionados(carriers);
+    setResultados([]);
+  }
+
+  function toggleCarrier(carrier) {
+    setCarriersSeleccionados((prev) =>
+      prev.includes(carrier) ? prev.filter((c) => c !== carrier) : [...prev, carrier]
+    );
+  }
+
+  async function handleBuscar() {
+    const items = registros.filter(
+      (r) => r.scanLocation === scanLocationSeleccionado && carriersSeleccionados.includes(r.carrier)
+    );
+    
+    setCargando(true);
+    setProgreso({ hecho: 0, total: items.length });
+    setResultados([]);
+    
+    const datos = await scrapeBatch(items, (hecho, total) => setProgreso({ hecho, total }));
+    setResultados(datos);
+    setCargando(false);
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+    <div className="app">
+      <h1>Dashboard de Trackings</h1>
+      
+      <FileUpload onFileSelected={handleFileSelected} fileName={fileName} />
+      
+      {scanLocations.length > 0 && (
+        <ScanLocationSelect 
+          opciones={scanLocations} 
+          valor={scanLocationSeleccionado} 
+          onChange={handleScanLocationChange} 
+        />
+      )}
+      
+      <CarrierCheckboxes
+        carriers={carriersDisponibles}
+        seleccionados={carriersSeleccionados}
+        onToggle={toggleCarrier}
+        onBuscar={handleBuscar}
+        cargando={cargando}
+      />
+      
+      {cargando && progreso && (
+        <div className="card">Procesando {progreso.hecho} de {progreso.total}...</div>
+      )}
+      
+      {/* Aquí ya pasamos la prop scanLocation al reporte */}
+      <ResultsReport 
+        resultados={resultados} 
+        scanLocation={scanLocationSeleccionado} 
+      />
+    </div>
+  );
 }
-
-export default App
