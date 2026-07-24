@@ -1,4 +1,4 @@
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 import puppeteer from 'puppeteer-core';
 
 async function scrapeUPS(page, waybill) {
@@ -42,10 +42,13 @@ export default async function handler(req, res) {
   
   let browser;
   try {
+    // Aquí descargamos el Chromium intacto en tiempo de ejecución
+    const packUrl = 'https://github.com/Sparticuz/chromium/releases/download/v131.0.0/chromium-v131.0.0-pack.tar';
+    
     browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath(packUrl),
       headless: chromium.headless,
     });
     
@@ -61,15 +64,12 @@ export default async function handler(req, res) {
           status: datos.status,
           deliveryDate: datos.deliveryDate,
         });
-    } catch (errorItem) {
-        // IMPRIMIR EL ERROR EN LA CONSOLA DE VERCEL
+      } catch (errorItem) {
         console.error(`Error en tracking ${item.waybill}:`, errorItem.message);
-        
         resultados.push({
           waybill: item.waybill,
           carrier: item.carrier,
-          // MANDAR EL ERROR AL FRONTEND PARA VERLO EN LA TABLA
-          status: `Error: ${errorItem.message}`, 
+          status: `Error: ${errorItem.message}`,
           deliveryDate: null,
         });
       }
@@ -79,9 +79,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ resultados });
   } catch (error) {
     if (browser) await browser.close();
-    // ESTA LÍNEA ES NUEVA: Imprimirá el error real en los logs de Vercel
     console.error("Error crítico al iniciar Puppeteer:", error.message, error);
-    
     return res.status(500).json({ error: error.message });
   }
 }
