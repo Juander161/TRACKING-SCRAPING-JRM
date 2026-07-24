@@ -16,7 +16,7 @@ export async function parseTrackingFile(file) {
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
   const primeraHoja = workbook.Sheets[workbook.SheetNames[0]];
   const filas = XLSX.utils.sheet_to_json(primeraHoja, { defval: '' });
-
+  
   const registros = filas
     .map((fila) => ({
       waybill: encontrarColumna(fila, 'WAYBILL'),
@@ -25,7 +25,7 @@ export async function parseTrackingFile(file) {
     }))
     .filter((r) => r.waybill && r.carrier && r.scanLocation)
     .filter((r) => carriersValidos.includes(String(r.carrier).trim()));
-
+    
   return registros;
 }
 

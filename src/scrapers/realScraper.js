@@ -6,21 +6,22 @@ async function scrapeLote(items) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items }),
   });
-
+  
   if (!respuesta.ok) {
     const errorTexto = await respuesta.text();
     throw new Error(`Error del servidor: ${respuesta.status} - ${errorTexto}`);
   }
-
+  
   const datos = await respuesta.json();
   return datos.resultados;
 }
 
 export async function scrapeBatch(items, onProgress) {
   const resultados = [];
-
+  
   for (let i = 0; i < items.length; i += TAMANO_LOTE) {
     const lote = items.slice(i, i + TAMANO_LOTE);
+    
     try {
       const lotesResueltos = await scrapeLote(lote);
       resultados.push(...lotesResueltos);
@@ -35,11 +36,11 @@ export async function scrapeBatch(items, onProgress) {
       });
       console.error('Error en lote de scraping:', error);
     }
-
+    
     if (onProgress) {
       onProgress(resultados.length, items.length);
     }
   }
-
+  
   return resultados;
 }
