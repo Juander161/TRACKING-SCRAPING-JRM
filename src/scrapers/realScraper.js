@@ -1,4 +1,4 @@
-const TAMANO_LOTE = 15;
+const TAMANO_LOTE = 8;
 
 // Función de pausa
 const esperar = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
