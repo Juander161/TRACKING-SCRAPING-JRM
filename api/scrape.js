@@ -61,11 +61,15 @@ export default async function handler(req, res) {
           status: datos.status,
           deliveryDate: datos.deliveryDate,
         });
-      } catch (errorItem) {
+    } catch (errorItem) {
+        // IMPRIMIR EL ERROR EN LA CONSOLA DE VERCEL
+        console.error(`Error en tracking ${item.waybill}:`, errorItem.message);
+        
         resultados.push({
           waybill: item.waybill,
           carrier: item.carrier,
-          status: 'Error al consultar',
+          // MANDAR EL ERROR AL FRONTEND PARA VERLO EN LA TABLA
+          status: `Error: ${errorItem.message}`, 
           deliveryDate: null,
         });
       }
