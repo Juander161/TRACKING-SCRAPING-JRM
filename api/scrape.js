@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     // REEMPLAZA TU_API_KEY CON LA LLAVE QUE COPIASTE
     // AQUÍ ES LA MAGIA: Nos conectamos al Chrome remoto de Browserless
     browser = await puppeteer.connect({
-        browserWSEndpoint: 'wss://production-sfo.browserless.io?token=4433f7d2cbf84a1399464fc6362b3bad',
+        browserWSEndpoint: 'wss://production-sfo.browserless.io/?token=4433f7d2cbf84a1399464fc6362b3bad',
       });
     
     const page = await browser.newPage();
