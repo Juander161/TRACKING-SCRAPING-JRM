@@ -63,7 +63,7 @@ export default async function handler(req, res) {
 
     // Generalmente, estas APIs devuelven la URL en una propiedad llamada websocket, wsUrl, o endpoint.
     // Ajustaremos esto si Surfsky usa un nombre diferente en su documentación.
-    const wsEndpoint = surfskyData.websocket || surfskyData.wsUrl || surfskyData.endpoint || surfskyData.url;
+    const wsEndpoint = surfskyData.ws_url;
 
     if (!wsEndpoint) {
       throw new Error("No se encontró la URL del WebSocket en la respuesta de Surfsky: " + JSON.stringify(surfskyData));
