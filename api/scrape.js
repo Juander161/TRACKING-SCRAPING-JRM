@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     const surfskyResponse = await fetch('https://api-us1.surfsky.io/profiles/one_time', {
       method: 'POST',
       headers: {
-        'X-Cloud-Api-Token': 'TU_API_TOKEN_AQUI', // <-- PON TU TOKEN REAL AQUÍ
+        'X-Cloud-Api-Token': '4433f7d2cbf84a1399464fc6362b3bad', // <-- PON TU TOKEN REAL AQUÍ
         'Content-Type': 'application/json'
       }
     });
