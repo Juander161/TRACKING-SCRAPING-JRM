@@ -48,7 +48,7 @@ export async function scrapeBatch(items, onProgress) {
     // Matemáticamente seguro para el límite de 5 llamadas / min de Surfsky
     if (i + TAMANO_LOTE < items.length) {
       console.log("Esperando 15 segundos para respetar los límites de Surfsky...");
-      await esperar(15000); 
+      await esperar(1500); 
     }
   }
   
